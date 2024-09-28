@@ -46,17 +46,11 @@ class Message(BaseModel):
     forward_origin: MessageOriginUser | MessageOriginHiddenUser | MessageOriginChat | MessageOriginChannel | None
     text: Optional[str] = None
     audio: Optional[Audio] = None
-    # document: Optional[Document] = None
     photo: Optional[List[PhotoSize]] = None
     sticker: Optional[Sticker] = None
-    # video: Optional[Video] = None
-    # video_note: Optional[VideoNote] = None
     voice: Optional[Voice] = None
     caption: Optional[str] = None
-    # contact: Optional[Contact] = None
     dice: Optional[Dice] = None
-    # poll: Optional[Poll] = None
-    # location: Optional[Location] = None
 
 
 class ResponseLLM(BaseModel):

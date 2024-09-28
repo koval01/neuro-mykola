@@ -5,9 +5,9 @@ import sys
 from aiogram import F, Bot, Dispatcher
 from aiogram.types import Message
 
-from application.llm import LLM
+from application.llm.llm import LLM
 from application.utils import Utils
-from application.config import settings
+from application.utils import settings
 
 
 WORK_CHAT_ID = settings.WORK_CHAT_ID

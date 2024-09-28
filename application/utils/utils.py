@@ -56,7 +56,7 @@ class Utils:
         await error_msg.delete()
 
     @staticmethod
-    async def download_media(bot: Bot, file_id: str, mime: str = None) -> ImageObject | BytesIO:
+    async def download_media(bot: Bot, file_id: str, mime: str = None) -> ImageObject | Blob | None:
         """
         Download and process media from a given file ID. Handles both images and audio.
 
@@ -72,9 +72,12 @@ class Utils:
         file = await bot.get_file(file_id)
         file_data = await bot.download_file(file.file_path)
 
+        if not file_data:
+            return None
+
         image_stream = BytesIO(file_data.getvalue())
 
         if mime:
-            return Blob(mime_type=mime, data=image_stream.getvalue())
+            return Blob(mime_type=mime, data=image_stream.getvalue())  # type: ignore
 
         return Image.open(image_stream)

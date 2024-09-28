@@ -1,21 +1,23 @@
 import json
 import logging
+from typing import Type, Any
+
 from pydantic import ValidationError, BaseModel
 
 from aiogram.types import Message
 from aiogram import Bot
 
-from application.models import Message as LLMMessage
+from application.models.message import Message as LLMMessage
 
 import google.generativeai as genai
 from google.generativeai.types import (
     HarmBlockThreshold, HarmCategory, BlockedPromptException,
-    ContentType, StopCandidateException
+    StopCandidateException
 )
 
-from application.utils import Utils
-from application.models import ResponseLLM
-from application.config import settings
+from application.utils.config import settings
+from application.utils.utils import Utils
+from application.models.message import ResponseLLM
 
 
 class LLM:
@@ -41,7 +43,7 @@ class LLM:
         self.bot: Bot = bot
 
         # Load system prompt and generation configuration from external files
-        sys_prompt = Utils.read_file("sys_prompt.txt")
+        sys_prompt = Utils.read_file("../prompts/sys_prompt.txt")
         generation_config = Utils.read_file("generation_config.json", json.loads)
 
         # Configure the generative AI model with custom settings
@@ -59,10 +61,11 @@ class LLM:
         )
         self.session = model.start_chat()
 
-    def prepare_data(self, message: Message, model: BaseModel) -> str:
+    @staticmethod
+    def prepare_data(message: Message, model: Type[BaseModel]) -> str:
         """
         Prepare and serialize the message data into JSON format suitable for LLM input.
-        
+
         Args:
         - message (Message): The incoming message to be processed.
         - model (BaseModel): Pydantic BaseModel for data validation and serialization.
@@ -72,7 +75,8 @@ class LLM:
         """
         return model(**message.model_dump()).model_dump_json()
 
-    async def prepare_response(self, message: Message, response_llm: str) -> ResponseLLM | None:
+    @staticmethod
+    async def prepare_response(message: Message, response_llm: str) -> ResponseLLM | None:
         """
         Parse and validate the LLM's response. Handle potential JSON errors and
         model validation issues.
@@ -97,7 +101,7 @@ class LLM:
             await Utils.error_display(message, f"Error validating JSON response from LLM. Details: {e}")
             return None
 
-    async def response_process(self, message: Message, additional_input: ContentType | list = []) -> dict | None:
+    async def response_process(self, message: Message, additional_input: tuple[Any] = None) -> dict | None:
         """
         Handle the entire flow from preparing the input, sending it to the LLM,
         and processing the response.
@@ -109,7 +113,11 @@ class LLM:
         Returns:
         - dict | None: The final processed response as a dictionary or None in case of errors.
         """
+        if additional_input is None:
+            additional_input: tuple = ()
+
         input_data = self.prepare_data(message, LLMMessage)
+
         try:
             response = await self.session.send_message_async((input_data, *additional_input,))
         except (StopCandidateException, BlockedPromptException) as e:
